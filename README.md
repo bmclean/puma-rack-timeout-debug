@@ -24,7 +24,7 @@ Start the server:
 As expected, this times out:
 
     HTTP/1.1 500 Internal Server Error
-    Content-Length: 1253
+    Content-Length: 77
 
     #<Rack::Timeout::RequestTimeoutError: Request ran for longer than 1000ms >
 
@@ -37,6 +37,6 @@ As expected, this times out:
 As expected, this times out:
 
     HTTP/1.1 500 Internal Server Error
-    Content-Length: 1270
+    Content-Length: 77
 
     #<Rack::Timeout::RequestTimeoutError: Request waited 16ms, then ran for longer than 984ms >

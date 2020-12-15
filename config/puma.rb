@@ -5,6 +5,8 @@ threads 5, 5
 port ENV.fetch("PORT", 3000)
 environment "production"
 
+first_data_timeout 30
+
 if ENV.fetch("WEB_CONCURRENCY", 0).to_i > 1
   workers ENV.fetch("WEB_CONCURRENCY").to_i
   preload_app!
