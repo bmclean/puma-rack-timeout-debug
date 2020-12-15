@@ -2,14 +2,14 @@
 
 Start the server:
 
-    bundle exec puma -C config/puma.rb config.ru
+    RACK_TIMEOUT_SERVICE_TIMEOUT=15 RACK_TIMEOUT_WAIT_TIMEOUT=30 RACK_TIMEOUT_WAIT_OVERTIME=60 bundle exec puma -C config/puma.rb config.ru
 
-    curl localhost:3000 -I
+    ruby post.rb
 
 Response:
 
-    HTTP/1.1 200 OK
-    Content-Type: text/html
+    200
+    Got it!
 
 ##### Service timeout example:
 
@@ -17,26 +17,26 @@ When "service timeout" is set to 1 second, but the request will sleep for 2 seco
 
 Start the server:
 
-    EXAMPLE_SLEEP_TIME=2 RACK_TIMEOUT_SERVICE_TIMEOUT=1 bundle exec puma -C config/puma.rb config.ru
+    EXAMPLE_SLEEP_TIME=2 RACK_TIMEOUT_SERVICE_TIMEOUT=1 RACK_TIMEOUT_WAIT_TIMEOUT=30 RACK_TIMEOUT_WAIT_OVERTIME=60 bundle exec puma -C config/puma.rb config.ru
 
-    curl localhost:3000 -I
+    ruby post.rb
 
 As expected, this times out:
 
-    HTTP/1.1 500 Internal Server Error
-    Content-Length: 77
+    500
+    An unhandled lowlevel error occurred. The application logs may have details.
 
-    #<Rack::Timeout::RequestTimeoutError: Request ran for longer than 1000ms >
+    #<Rack::Timeout::RequestTimeoutError: Request waited 15ms, then ran for longer than 1000ms >
 
 ##### Wait timeout example:
 
-    RACK_TIMEOUT_WAIT_TIMEOUT=1 EXAMPLE_SLEEP_TIME=2 bundle exec puma -C config/puma.rb config.ru
+    EXAMPLE_SLEEP_TIME=3 RACK_TIMEOUT_SERVICE_TIMEOUT=15 RACK_TIMEOUT_WAIT_TIMEOUT=1 RACK_TIMEOUT_WAIT_OVERTIME=1 bundle exec puma -C config/puma.rb config.ru
 
-    curl localhost:3000 -I -X GET --header "X-Request-Start: t=$(ruby -e 'puts Time.now.to_f.round(3)')"
+    ruby post.rb
 
 As expected, this times out:
 
-    HTTP/1.1 500 Internal Server Error
-    Content-Length: 77
+    500
+    An unhandled lowlevel error occurred. The application logs may have details.
 
-    #<Rack::Timeout::RequestTimeoutError: Request waited 16ms, then ran for longer than 984ms >
+    #<Rack::Timeout::RequestTimeoutError: Request waited 13ms, then ran for longer than 1987ms >
