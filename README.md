@@ -1,5 +1,7 @@
 ### Puma Slow Client Debug
 
+Using Puma, Rack Timeout and Faraday.
+
 Start the server:
 
     RACK_TIMEOUT_SERVICE_TIMEOUT=15 \
@@ -88,11 +90,15 @@ Start the server:
 
     ruby post.rb
 
-We should have 5 seconds of wait_time plus 8 seconds of wait_overtime.
+We have 5 seconds of wait_time plus 8 seconds of wait_overtime.
 This request (using the 3gslow throttle) exceeds 13 seconds, so we see:
 
     #<Rack::Timeout::RequestExpiryError: Request older than 13000ms.>
 
-!! Stop the network throttle !!
+Setting RACK_TIMEOUT_WAIT_OVERTIME=20 allows the payload to be fully received:
+
+    source=rack-timeout id=16a5369d-c196-45e4-879e-667db3902dcb wait=23000ms timeout=1000ms service=6ms state=completed at=info
+
+!! Remember to stop the network throttle !!
 
     throttle --stop --localhost
