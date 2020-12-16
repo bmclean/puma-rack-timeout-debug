@@ -2,7 +2,7 @@ require "faraday"
 require "json"
 
 payload = ""
-5000.times do
+7500.times do
   payload += "g5555555aaMCCCCCCEBRBCCCCCIA/QQQQ777sWWWWWssH2lFFFFFYWQ1VVVVV2hhhhGUgaGSDSSSSSRSJBBg"
 end
 
