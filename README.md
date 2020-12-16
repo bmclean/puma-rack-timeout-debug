@@ -89,21 +89,21 @@ Throttle will use sudo so your user will need sudo rights.
 Start the server:
 
     RACK_TIMEOUT_SERVICE_TIMEOUT=1 \
-    RACK_TIMEOUT_WAIT_TIMEOUT=5 \
-    RACK_TIMEOUT_WAIT_OVERTIME=8 \
+    RACK_TIMEOUT_WAIT_TIMEOUT=3 \
+    RACK_TIMEOUT_WAIT_OVERTIME=5 \
     bundle exec puma -C config/puma.rb config.ru
 
     ruby post.rb
 
-We have 5 seconds of wait_time plus 8 seconds of wait_overtime.
-This request (using the 3gslow throttle) exceeds 13 seconds, so we see:
+We have 3 seconds of wait_time plus 5 seconds of wait_overtime.
+This request (using the 3gslow throttle) exceeds 8 seconds, so we see:
 
     Payload size: 630000
     500
     Internal Server Error
     An unhandled lowlevel error occurred. The application logs may have details.
 
-    #<Rack::Timeout::RequestExpiryError: Request older than 13000ms.>
+    #<Rack::Timeout::RequestExpiryError: Request older than 8000ms.>
 
 Setting RACK_TIMEOUT_WAIT_OVERTIME=20 allows the payload to be fully received:
 
@@ -115,10 +115,10 @@ Setting RACK_TIMEOUT_WAIT_OVERTIME=20 allows the payload to be fully received:
 
 But what if Puma's first_data_timeout is smaller than wait_time plus wait_overtime?
 
-    FIRST_DATA_TIMEOUT=10 \
+    FIRST_DATA_TIMEOUT=6 \
     RACK_TIMEOUT_SERVICE_TIMEOUT=1 \
-    RACK_TIMEOUT_WAIT_TIMEOUT=5 \
-    RACK_TIMEOUT_WAIT_OVERTIME=8 \
+    RACK_TIMEOUT_WAIT_TIMEOUT=3 \
+    RACK_TIMEOUT_WAIT_OVERTIME=5 \
     bundle exec puma -C config/puma.rb config.ru
 
 The response is 408 - Request Timeout.
