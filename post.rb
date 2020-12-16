@@ -17,4 +17,5 @@ response = connection.post("http://localhost:3000") do |request|
 end
 
 puts response.status
+puts "\e[33m#{response.reason_phrase}\e[0m" if response.status != 200
 puts response.body

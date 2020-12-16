@@ -13,6 +13,7 @@ Start the server:
 
 Response:
 
+    Payload size: 630000
     200
     Got it!
 
@@ -32,7 +33,9 @@ Start the server:
 
 As expected, this times out:
 
+    Payload size: 630000
     500
+    Internal Server Error
     An unhandled lowlevel error occurred. The application logs may have details.
 
     #<Rack::Timeout::RequestTimeoutError: Request waited 15ms, then ran for longer than 1000ms >
@@ -51,7 +54,9 @@ Start the server:
 
 As expected, this times out:
 
+    Payload size: 630000
     500
+    Internal Server Error
     An unhandled lowlevel error occurred. The application logs may have details.
 
     #<Rack::Timeout::RequestTimeoutError: Request waited 13ms, then ran for longer than 1987ms >
@@ -93,12 +98,31 @@ Start the server:
 We have 5 seconds of wait_time plus 8 seconds of wait_overtime.
 This request (using the 3gslow throttle) exceeds 13 seconds, so we see:
 
+    Payload size: 630000
+    500
+    Internal Server Error
+    An unhandled lowlevel error occurred. The application logs may have details.
+
     #<Rack::Timeout::RequestExpiryError: Request older than 13000ms.>
 
 Setting RACK_TIMEOUT_WAIT_OVERTIME=20 allows the payload to be fully received:
 
-    source=rack-timeout id=16a5369d-c196-45e4-879e-667db3902dcb wait=23000ms timeout=1000ms service=6ms state=completed at=info
+    Payload size: 630000
+    200
+    Got it!
 
-!! Remember to stop the network throttle !!
+    source=rack-timeout id=16a5369d-c196-45e4-879e-667db3902dcb wait=17793ms timeout=1000ms service=6ms state=completed at=info
+
+But what if Puma's first_data_timeout is smaller than wait_time plus wait_overtime?
+
+    FIRST_DATA_TIMEOUT=10 \
+    RACK_TIMEOUT_SERVICE_TIMEOUT=1 \
+    RACK_TIMEOUT_WAIT_TIMEOUT=5 \
+    RACK_TIMEOUT_WAIT_OVERTIME=8 \
+    bundle exec puma -C config/puma.rb config.ru
+
+The response is 408 - Request Timeout.
+
+###### !! Remember to stop the network throttle !!
 
     throttle --stop --localhost
