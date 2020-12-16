@@ -113,7 +113,8 @@ Setting RACK_TIMEOUT_WAIT_OVERTIME=20 allows the payload to be fully received:
 
     source=rack-timeout id=16a5369d-c196-45e4-879e-667db3902dcb wait=17793ms timeout=1000ms service=6ms state=completed at=info
 
-But what if Puma's first_data_timeout is smaller than wait_time plus wait_overtime?
+What if Puma's first_data_timeout is smaller than wait_time + wait_overtime?
+6 < (3 + 5)
 
     FIRST_DATA_TIMEOUT=6 \
     RACK_TIMEOUT_SERVICE_TIMEOUT=1 \
@@ -121,7 +122,48 @@ But what if Puma's first_data_timeout is smaller than wait_time plus wait_overti
     RACK_TIMEOUT_WAIT_OVERTIME=5 \
     bundle exec puma -C config/puma.rb config.ru
 
-The response is 408 - Request Timeout.
+The response is 408 - Request Timeout. Rack Timeout isn't given a chance to fire.
+
+What if Puma's first_data_timeout is equal to wait_time + wait_overtime?
+8 = (3 + 5)
+
+    FIRST_DATA_TIMEOUT=8 \
+    RACK_TIMEOUT_SERVICE_TIMEOUT=1 \
+    RACK_TIMEOUT_WAIT_TIMEOUT=3 \
+    RACK_TIMEOUT_WAIT_OVERTIME=5 \
+    bundle exec puma -C config/puma.rb config.ru
+
+The response is still 408 - Request Timeout.
+
+What if Puma's first_data_timeout is slightly greater than wait_time + wait_overtime?
+10 > (3 + 5)
+
+    FIRST_DATA_TIMEOUT=10 \
+    RACK_TIMEOUT_SERVICE_TIMEOUT=1 \
+    RACK_TIMEOUT_WAIT_TIMEOUT=3 \
+    RACK_TIMEOUT_WAIT_OVERTIME=5 \
+    bundle exec puma -C config/puma.rb config.ru
+
+The response is still a 408 - Request Timeout.
+
+What if Puma's first_data_timeout is greater than wait_time + wait_overtime?
+Note: I kept incrementing first_data_timeout by 1 until the 408s stopped.
+It needed to be wait_time + wait_overtime + 7 seconds??
+
+    FIRST_DATA_TIMEOUT=15 \
+    RACK_TIMEOUT_SERVICE_TIMEOUT=1 \
+    RACK_TIMEOUT_WAIT_TIMEOUT=3 \
+    RACK_TIMEOUT_WAIT_OVERTIME=5 \
+    bundle exec puma -C config/puma.rb config.ru
+
+Now Rack Timeout is working again:
+
+    Payload size: 630000
+    500
+    Internal Server Error
+    An unhandled lowlevel error occurred. The application logs may have details.
+
+    #<Rack::Timeout::RequestExpiryError: Request older than 8000ms.>
 
 ###### !! Remember to stop the network throttle !!
 
