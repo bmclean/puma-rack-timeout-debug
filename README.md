@@ -61,7 +61,7 @@ As expected, this times out:
 
     #<Rack::Timeout::RequestTimeoutError: Request waited 13ms, then ran for longer than 1987ms >
 
-##### Wait timeout with link conditioner example:
+##### Wait timeout with link conditioner examples:
 
 The time between when a request is fully received and when rack starts handling it is called 
 the wait time. A request's start time, and from that its wait time, is through the availability 
@@ -113,8 +113,7 @@ Setting RACK_TIMEOUT_WAIT_OVERTIME=20 allows the payload to be fully received:
 
     source=rack-timeout id=16a5369d-c196-45e4-879e-667db3902dcb wait=17793ms timeout=1000ms service=6ms state=completed at=info
 
-What if Puma's first_data_timeout is smaller than wait_time + wait_overtime?
-6 < (3 + 5)
+##### What if Puma's first_data_timeout is smaller than wait_time + wait_overtime? 6 < (3 + 5)
 
     FIRST_DATA_TIMEOUT=6 \
     RACK_TIMEOUT_SERVICE_TIMEOUT=1 \
@@ -124,8 +123,7 @@ What if Puma's first_data_timeout is smaller than wait_time + wait_overtime?
 
 The response is 408 - Request Timeout. Rack Timeout isn't given a chance to fire.
 
-What if Puma's first_data_timeout is equal to wait_time + wait_overtime?
-8 = (3 + 5)
+What if Puma's first_data_timeout is equal to wait_time + wait_overtime? 8 = (3 + 5)
 
     FIRST_DATA_TIMEOUT=8 \
     RACK_TIMEOUT_SERVICE_TIMEOUT=1 \
@@ -135,8 +133,7 @@ What if Puma's first_data_timeout is equal to wait_time + wait_overtime?
 
 The response is still 408 - Request Timeout.
 
-What if Puma's first_data_timeout is slightly greater than wait_time + wait_overtime?
-10 > (3 + 5)
+##### What if Puma's first_data_timeout is slightly greater than wait_time + wait_overtime? 10 > (3 + 5)
 
     FIRST_DATA_TIMEOUT=10 \
     RACK_TIMEOUT_SERVICE_TIMEOUT=1 \
@@ -146,9 +143,10 @@ What if Puma's first_data_timeout is slightly greater than wait_time + wait_over
 
 The response is still a 408 - Request Timeout.
 
-What if Puma's first_data_timeout is greater than wait_time + wait_overtime?
+##### What if Puma's first_data_timeout is greater than wait_time + wait_overtime? 15 > (3 + 5)
+
 Note: I kept incrementing first_data_timeout by 1 until the 408s stopped.
-It needed to be wait_time + wait_overtime + 7 seconds??
+It needed to be wait_time + wait_overtime + (2 to 7 seconds). Not sure why the extra is needed. Might be related to data in the queue?
 
     FIRST_DATA_TIMEOUT=15 \
     RACK_TIMEOUT_SERVICE_TIMEOUT=1 \
