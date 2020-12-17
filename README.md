@@ -2,6 +2,8 @@
 
 Using Puma, Rack Timeout and Faraday.
 
+Based on https://github.com/schneems/rack_timeout_demos
+
 Start the server:
 
     RACK_TIMEOUT_SERVICE_TIMEOUT=15 \
@@ -166,3 +168,12 @@ Now Rack Timeout is working again:
 ###### !! Remember to stop the network throttle !!
 
     throttle --stop --localhost
+
+##### Solution
+
+Add this to the puma.rb config file:
+
+    wait_timeout = ENV.fetch('RACK_TIMEOUT_WAIT_TIMEOUT', 30).to_i
+    wait_overtime = ENV.fetch('RACK_TIMEOUT_WAIT_OVERTIME', 60).to_i
+    data_timeout = wait_timeout + wait_overtime + 5
+    first_data_timeout data_timeout
