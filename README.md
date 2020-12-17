@@ -1,4 +1,4 @@
-### Puma Slow Client Debug
+### Puma 5.0.3+ Slow Client Debug
 
 Using Puma, Rack Timeout and Faraday.
 
