@@ -2,6 +2,8 @@
 
 Using Puma, Rack Timeout and Faraday.
 
+Also see https://github.com/bmclean/puma-rails-timeout-debug for a Rails example.
+
 Based on https://github.com/schneems/rack_timeout_demos
 
 Start the server:
@@ -148,7 +150,8 @@ The response is still a 408 - Request Timeout.
 ##### What if Puma's first_data_timeout is greater than wait_time + wait_overtime? 15 > (3 + 5)
 
 Note: I kept incrementing first_data_timeout by 1 until the 408s stopped.
-It needed to be wait_time + wait_overtime + (2 to 7 seconds). Not sure why the extra is needed. Might be related to data in the queue?
+It needed to be wait_time + wait_overtime + (2 to 7 seconds). Not sure why the extra is needed. 
+Might be related to data in the queue?
 
     FIRST_DATA_TIMEOUT=15 \
     RACK_TIMEOUT_SERVICE_TIMEOUT=1 \
@@ -165,6 +168,12 @@ Now Rack Timeout is working again:
 
     #<Rack::Timeout::RequestExpiryError: Request older than 8000ms.>
 
+##### Update
+
+Testing in production with actual mobile devices showed that the `first_data_timeout` needs to
+be 2x RACK_TIMEOUT_WAIT_TIMEOUT + RACK_TIMEOUT_WAIT_OVERTIME. Otherwise Puma can still time out
+before Rack::Tmeout.
+
 ###### !! Remember to stop the network throttle !!
 
     throttle --stop --localhost
@@ -175,5 +184,5 @@ Add this to the puma.rb config file:
 
     wait_timeout = ENV.fetch('RACK_TIMEOUT_WAIT_TIMEOUT', 30).to_i
     wait_overtime = ENV.fetch('RACK_TIMEOUT_WAIT_OVERTIME', 60).to_i
-    data_timeout = wait_timeout + wait_overtime + 5
+    data_timeout = (wait_timeout + wait_overtime) * 2
     first_data_timeout data_timeout
