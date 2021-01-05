@@ -9,7 +9,7 @@ Based on https://github.com/schneems/rack_timeout_demos
 Start the server:
 
     RACK_TIMEOUT_SERVICE_TIMEOUT=15 \
-    RACK_TIMEOUT_WAIT_TIMEOUT=30 \ 
+    RACK_TIMEOUT_WAIT_TIMEOUT=30 \
     RACK_TIMEOUT_WAIT_OVERTIME=60 \
     bundle exec puma -C config/puma.rb config.ru
 
@@ -20,6 +20,7 @@ Response:
     Payload size: 630000
     200
     Got it!
+    Duration 0.02 seconds
 
 ##### Service timeout example:
 
@@ -41,6 +42,7 @@ As expected, this times out:
     500
     Internal Server Error
     An unhandled lowlevel error occurred. The application logs may have details.
+    Duration 1.02 seconds
 
     #<Rack::Timeout::RequestTimeoutError: Request waited 15ms, then ran for longer than 1000ms >
 
@@ -62,6 +64,7 @@ As expected, this times out:
     500
     Internal Server Error
     An unhandled lowlevel error occurred. The application logs may have details.
+    Duration 2.01 seconds
 
     #<Rack::Timeout::RequestTimeoutError: Request waited 13ms, then ran for longer than 1987ms >
 
@@ -106,16 +109,29 @@ This request (using the 3gslow throttle) exceeds 8 seconds, so we see:
     500
     Internal Server Error
     An unhandled lowlevel error occurred. The application logs may have details.
+    Duration 19.4 seconds (???)
 
     #<Rack::Timeout::RequestExpiryError: Request older than 8000ms.>
 
-Setting RACK_TIMEOUT_WAIT_OVERTIME=20 allows the payload to be fully received:
+But wait! The duration of the request was 19.4 seconds. So it wasn't until after Puma had
+received the entire body of the POST request before Rack Timeout checked the X-Request-Start
+header...
+
+Setting RACK_TIMEOUT_WAIT_OVERTIME=25 allows the payload to be fully received:
+
+    RACK_TIMEOUT_SERVICE_TIMEOUT=1 \
+    RACK_TIMEOUT_WAIT_TIMEOUT=3 \
+    RACK_TIMEOUT_WAIT_OVERTIME=25 \
+    bundle exec puma -C config/puma.rb config.ru
+
+    ruby post.rb
 
     Payload size: 630000
     200
     Got it!
+    Duration 23.61 seconds
 
-    source=rack-timeout id=16a5369d-c196-45e4-879e-667db3902dcb wait=17793ms timeout=1000ms service=6ms state=completed at=info
+    source=rack-timeout wait=23020ms timeout=1000ms service=8ms state=completed at=info
 
 ##### What if Puma's first_data_timeout is smaller than wait_time + wait_overtime? 6 < (3 + 5)
 
@@ -127,7 +143,12 @@ Setting RACK_TIMEOUT_WAIT_OVERTIME=20 allows the payload to be fully received:
 
 The response is 408 - Request Timeout. Rack Timeout isn't given a chance to fire.
 
-What if Puma's first_data_timeout is equal to wait_time + wait_overtime? 8 = (3 + 5)
+    Payload size: 630000
+    408
+    Request Timeout
+    Duration 9.04 seconds
+
+##### What if Puma's first_data_timeout is equal to wait_time + wait_overtime? 8 = (3 + 5)
 
     FIRST_DATA_TIMEOUT=8 \
     RACK_TIMEOUT_SERVICE_TIMEOUT=1 \
@@ -136,6 +157,11 @@ What if Puma's first_data_timeout is equal to wait_time + wait_overtime? 8 = (3 
     bundle exec puma -C config/puma.rb config.ru
 
 The response is still 408 - Request Timeout.
+
+    Payload size: 630000
+    408
+    Request Timeout
+    Duration 12.88 seconds
 
 ##### What if Puma's first_data_timeout is slightly greater than wait_time + wait_overtime? 10 > (3 + 5)
 
@@ -147,13 +173,17 @@ The response is still 408 - Request Timeout.
 
 The response is still a 408 - Request Timeout.
 
+    Payload size: 630000
+    408
+    Request Timeout
+    Duration 18.69 seconds
+
 ##### What if Puma's first_data_timeout is greater than wait_time + wait_overtime? 15 > (3 + 5)
 
-Note: I kept incrementing first_data_timeout by 1 until the 408s stopped.
-It needed to be wait_time + wait_overtime + (2 to 7 seconds). Not sure why the extra is needed. 
-Might be related to data in the queue?
+Note: I kept increasing first_data_timeout until the 408s stopped. It needed to be large enough
+for Puma to receive the entire body of the slow client POST.
 
-    FIRST_DATA_TIMEOUT=15 \
+    FIRST_DATA_TIMEOUT=25 \
     RACK_TIMEOUT_SERVICE_TIMEOUT=1 \
     RACK_TIMEOUT_WAIT_TIMEOUT=3 \
     RACK_TIMEOUT_WAIT_OVERTIME=5 \
@@ -165,24 +195,17 @@ Now Rack Timeout is working again:
     500
     Internal Server Error
     An unhandled lowlevel error occurred. The application logs may have details.
+    Duration 20.06 seconds
 
     #<Rack::Timeout::RequestExpiryError: Request older than 8000ms.>
-
-##### Update
-
-Testing in production with actual mobile devices showed that the `first_data_timeout` needs to
-be 2x RACK_TIMEOUT_WAIT_TIMEOUT + RACK_TIMEOUT_WAIT_OVERTIME. Otherwise Puma can still time out
-before Rack::Tmeout.
 
 ###### !! Remember to stop the network throttle !!
 
     throttle --stop --localhost
 
-##### Solution
+###### Conclusion
 
-Add this to the puma.rb config file:
-
-    wait_timeout = ENV.fetch('RACK_TIMEOUT_WAIT_TIMEOUT', 30).to_i
-    wait_overtime = ENV.fetch('RACK_TIMEOUT_WAIT_OVERTIME', 60).to_i
-    data_timeout = (wait_timeout + wait_overtime) * 2
-    first_data_timeout data_timeout
+When using Rack Timeout with Puma versions 5.0.3+ the `RACK_TIMEOUT_WAIT_TIMEOUT` and 
+`RACK_TIMEOUT_WAIT_OVERTIME` variables don't really work for slow requests. Configuring Puma with a
+large enough `first_data_timeout` will allow Rack Timeout to fire. But if the entire client payload
+has already been received by your application what is the point in timing out the request?
