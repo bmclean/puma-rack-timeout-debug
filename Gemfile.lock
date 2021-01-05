@@ -6,7 +6,7 @@ GEM
       ruby2_keywords
     multipart-post (2.1.1)
     nio4r (2.5.4)
-    puma (5.1.1)
+    puma (4.3.7)
       nio4r (~> 2.0)
     rack (2.2.3)
     rack-timeout (0.6.0)
@@ -17,7 +17,7 @@ PLATFORMS
 
 DEPENDENCIES
   faraday
-  puma (= 5.1.1)
+  puma (= 4.3.7)
   rack
   rack-timeout
 
