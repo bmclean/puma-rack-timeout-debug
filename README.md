@@ -178,7 +178,7 @@ The response is still a 408 - Request Timeout.
     Request Timeout
     Duration 18.69 seconds
 
-##### What if Puma's first_data_timeout is greater than wait_time + wait_overtime? 15 > (3 + 5)
+##### What if Puma's first_data_timeout is greater than wait_time + wait_overtime? 25 > (3 + 5)
 
 Note: I kept increasing first_data_timeout until the 408s stopped. It needed to be large enough
 for Puma to receive the entire body of the slow client POST.
