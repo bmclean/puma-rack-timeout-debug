@@ -117,7 +117,7 @@ But wait! The duration of the request was 19.4 seconds. So it wasn't until after
 received the entire body of the POST request before Rack Timeout checked the X-Request-Start
 header...
 
-Setting RACK_TIMEOUT_WAIT_OVERTIME=25 allows the payload to be fully received:
+Setting RACK_TIMEOUT_WAIT_OVERTIME=25 allows the request to succeed:
 
     RACK_TIMEOUT_SERVICE_TIMEOUT=1 \
     RACK_TIMEOUT_WAIT_TIMEOUT=3 \
@@ -199,13 +199,30 @@ Now Rack Timeout is working again:
 
     #<Rack::Timeout::RequestExpiryError: Request older than 8000ms.>
 
+##### Setting RACK_TIMEOUT_WAIT_OVERTIME=25 allows the request to succeed:
+
+    FIRST_DATA_TIMEOUT=25 \
+    RACK_TIMEOUT_SERVICE_TIMEOUT=1 \
+    RACK_TIMEOUT_WAIT_TIMEOUT=3 \
+    RACK_TIMEOUT_WAIT_OVERTIME=25 \
+    bundle exec puma -C config/puma.rb config.ru
+
+    ruby post.rb
+
+    Payload size: 630000
+    200
+    Got it!
+    Duration 19.46 seconds
+
+    source=rack-timeout wait=17696ms timeout=1000ms service=11ms state=completed at=info
+
 ###### !! Remember to stop the network throttle !!
 
     throttle --stop --localhost
 
 ###### Conclusion
 
-When using Rack Timeout with Puma versions 5.0.3+ the `RACK_TIMEOUT_WAIT_TIMEOUT` and 
-`RACK_TIMEOUT_WAIT_OVERTIME` variables don't really work for slow requests. Configuring Puma with a
-large enough `first_data_timeout` will allow Rack Timeout to fire. But if the entire client payload
-has already been received by your application what is the point in timing out the request?
+When using Rack Timeout with Puma the `RACK_TIMEOUT_WAIT_TIMEOUT` and `RACK_TIMEOUT_WAIT_OVERTIME`
+settings might not work the way you think against slow requests. Configuring Puma with a large
+`first_data_timeout` will allow Rack Timeout to fire after the entire client payload has been 
+received by your application.
