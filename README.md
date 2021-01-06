@@ -189,7 +189,9 @@ for Puma to receive the entire body of the slow client POST.
     RACK_TIMEOUT_WAIT_OVERTIME=5 \
     bundle exec puma -C config/puma.rb config.ru
 
-Now Rack Timeout is working again:
+Now Rack Timeout is firing again. However, it is inefficient. We waited 20 seconds until the
+entire body of the request was received, compared this time against RACK_TIMEOUT_WAIT_TIMEOUT (3) +
+RACK_TIMEOUT_WAIT_OVERTIME(5), and immediately raised the RequestExpiryError.
 
     Payload size: 630000
     500
